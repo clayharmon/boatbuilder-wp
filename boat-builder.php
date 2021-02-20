@@ -12,14 +12,14 @@ Text Domain: boat-builder
 function boatBuilder_post_type()
 {
   register_post_type(
-    'boatbuilder_boats',
+    'boat-builder',
     [
       'labels' => [
         'name'          => __('Boats', 'boat-builder'),
         'singular_name' => __('Boat', 'boat-builder'),
       ],
       'public'      => true,
-      'has_archive' => false,
+      'has_archive' => true,
       'supports' => array('title')
     ]
   );
@@ -30,12 +30,12 @@ add_action('init', 'boatBuilder_post_type');
 function boatBuilder_parts_box()
 {
   global $pagenow;
-  if ($pagenow == 'post.php' && (get_post_type() == 'boatbuilder_boats')) {
+  if ($pagenow == 'post.php' && (get_post_type() == 'boat-builder')) {
     add_meta_box(
       'boatBuilder_parts_box',
       'Parts Section',
       'boatBuilder_parts_box_html',
-      'boatbuilder_boats'
+      'boat-builder'
     );
   }
 }
@@ -50,7 +50,7 @@ function boatBuilder_parts_box_html()
 
 function boatBuilder_cpt_enqueue($hook_suffix)
 {
-  $cpt = 'boatbuilder_boats';
+  $cpt = 'boat-builder';
   if (in_array($hook_suffix, array('post.php', 'post-new.php'))) {
     $screen = get_current_screen();
     if (is_object($screen) && $cpt == $screen->post_type) {
@@ -92,3 +92,40 @@ function boatBuilder_save_postdata($post_id)
   }
 }
 add_action('save_post', 'boatBuilder_save_postdata');
+
+function boatbuilder_post_content($content)
+{
+  global $post;
+  if ($post->post_type === 'boat-builder') {
+    return '<div id="boatbuilder-app"></div>';
+  }
+  return $content;
+}
+add_filter('the_content', 'boatbuilder_post_content');
+
+function boatbuilder_front_scripts()
+{
+  global $post;
+  if ($post->post_type === 'boat-builder') {
+    $id = $post->ID;
+    if ($id) {
+      $metaData = get_post_meta($id, 'boatbuilder_parts', true);
+      if ($metaData) {
+        $rawJavascriptData = $metaData;
+      } else {
+        $rawJavascriptData = [];
+      }
+    } else {
+      $rawJavascriptData = [];
+    }
+    $assetPath = plugins_url('front/assets-manifest.json', __FILE__);
+    $response = wp_remote_get($assetPath);
+    $assetsArr = json_decode($response['body']);
+    $cssFile = $assetsArr->{'main.css'};
+    $jsFile = $assetsArr->{'main.js'};
+    wp_enqueue_style('front-boat-parts-style', plugins_url('front/' . $cssFile, __FILE__), array(), 0.1);
+    wp_enqueue_script('front-boat-parts-script', plugins_url('front/' . $jsFile, __FILE__), array('jquery-ui-core'), 0.1, true);
+    wp_localize_script('front-boat-parts-script', 'rawJavascriptData', $rawJavascriptData);
+  }
+}
+add_action('wp_enqueue_scripts', 'boatbuilder_front_scripts');
