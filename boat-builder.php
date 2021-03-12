@@ -111,9 +111,10 @@ function boatbuilder_front_scripts()
     if ($id) {
       $metaData = get_post_meta($id, 'boatbuilder_parts', true);
       if ($metaData) {
-        $rawJavascriptData = $metaData;
+        $rawJavascriptData = json_decode($metaData);
+        $rawJavascriptData->post = $post;
       } else {
-        $rawJavascriptData = [];
+        $rawJavascriptData->post = $post;
       }
     } else {
       $rawJavascriptData = [];
@@ -125,7 +126,7 @@ function boatbuilder_front_scripts()
     $jsFile = $assetsArr->{'main.js'};
     wp_enqueue_style('front-boat-parts-style', plugins_url('front/' . $cssFile, __FILE__), array(), 0.1);
     wp_enqueue_script('front-boat-parts-script', plugins_url('front/' . $jsFile, __FILE__), array('jquery-ui-core'), 0.1, true);
-    wp_localize_script('front-boat-parts-script', 'rawJavascriptData', $rawJavascriptData);
+    wp_localize_script('front-boat-parts-script', 'rawFormData', json_encode($rawJavascriptData));
   }
 }
 add_action('wp_enqueue_scripts', 'boatbuilder_front_scripts');
