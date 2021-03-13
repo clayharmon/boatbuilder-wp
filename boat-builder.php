@@ -20,7 +20,7 @@ function boatBuilder_post_type()
       ],
       'public'      => true,
       'has_archive' => true,
-      'supports' => array('title')
+      'supports' => array('title', 'thumbnail')
     ]
   );
 }
@@ -108,13 +108,16 @@ function boatbuilder_front_scripts()
   global $post;
   if ($post->post_type === 'boat-builder') {
     $id = $post->ID;
+    $image = get_the_post_thumbnail_url( $id, 'full' );
     if ($id) {
       $metaData = get_post_meta($id, 'boatbuilder_parts', true);
       if ($metaData) {
         $rawJavascriptData = json_decode($metaData);
         $rawJavascriptData->post = $post;
+        $rawJavascriptData->image = $image;
       } else {
         $rawJavascriptData->post = $post;
+        $rawJavascriptData->image = $image;
       }
     } else {
       $rawJavascriptData = [];
