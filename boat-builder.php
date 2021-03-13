@@ -130,3 +130,17 @@ function boatbuilder_front_scripts()
   }
 }
 add_action('wp_enqueue_scripts', 'boatbuilder_front_scripts');
+
+add_filter('single_template', 'my_custom_template');
+
+function boatbuilder_load_template( $template ) {
+  global $post;
+
+  if ( 'boat-builder' === $post->post_type && locate_template( array( 'single-boat-builder.php' ) ) !== $template ) {
+      return plugin_dir_path( __FILE__ ) . 'single-boat-builder.php';
+  }
+
+  return $template;
+}
+
+add_filter( 'single_template', 'boatbuilder_load_template' );
