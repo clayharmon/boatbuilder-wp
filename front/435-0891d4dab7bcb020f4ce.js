@@ -1,0 +1,2 @@
+(self.__LOADABLE_LOADED_CHUNKS__=self.__LOADABLE_LOADED_CHUNKS__||[]).push([[435,396],{8299:function(n,e,_){"use strict";_.r(e);var t=_(8769),c=_(5893);e.default=function(){return(0,c.jsx)(t.Document,{children:(0,c.jsx)(t.Page,{children:(0,c.jsx)(t.Text,{children:"Hey"})})})}},8066:function(){},5976:function(){},1758:function(){}}]);
+//# sourceMappingURL=435-0891d4dab7bcb020f4ce.js.map
