@@ -127,8 +127,10 @@ function boatbuilder_front_scripts()
     $assetsArr = json_decode($response['body']);
     $cssFile = $assetsArr->{'main.css'};
     $jsFile = $assetsArr->{'main.js'};
+    $pdfFile = $assetsArr->{'pdf.js'};
     wp_enqueue_style('front-boat-parts-style', plugins_url('front/' . $cssFile, __FILE__), array(), 0.1);
     wp_enqueue_script('front-boat-parts-script', plugins_url('front/' . $jsFile, __FILE__), array('jquery-ui-core'), 0.1, true);
+    wp_enqueue_script('front-boat-parts-pdf', plugins_url('front/' . $pdfFile, __FILE__), array('jquery-ui-core'), 0.1, true);
     wp_localize_script('front-boat-parts-script', 'rawFormData', json_encode($rawJavascriptData));
   }
 }
@@ -147,3 +149,187 @@ function boatbuilder_load_template( $template ) {
 }
 
 add_filter( 'single_template', 'boatbuilder_load_template' );
+
+function send_email($form_email, $form_name, $form_body, $file_path) {
+  $email_subject = 'Message from '. get_bloginfo('name') . ' - ' . $form_email;
+  $headers = "From: '" . $form_name . "' <" . $form_email . "> \r\n";
+  $headers .= "Reply-To: ". strip_tags($form_email) . "\r\n";
+  $headers .= "Content-Type:text/html;charset=utf-8";
+  $email_message = '<html><body>';
+  $email_message .= "<table>";
+  $email_message .= "<tr><td>NAME: </td><td>" . $form_name . "</td></tr>";
+  $email_message .= "<tr><td>MESSAGE: </td><td>" . $form_message . "</td></tr>";
+  $email_message .= "</table>";
+  $email_message .= "</body></html>";
+  wp_mail('no-reply@localhost.com', $email_subject, $email_message, $headers, $file_path);
+}
+
+
+function sendEmailForm(WP_REST_Request $request) {
+  $response = array(
+    'status' => 304,
+    'message' => 'There was an error sending the form.'
+  );
+  $parameters = $request->get_json_params();
+  $siteName = wp_strip_all_tags(trim(get_option('blogname')));
+  $contactEmail = wp_strip_all_tags(trim($parameters['contact_email']));
+
+  if(empty($contactEmail)) {
+    $response['status'] = 400;
+    $response['message'] = 'Email field is required.';
+    return $response;
+    exit();
+  }
+
+  if(!filter_var($contactEmail, FILTER_VALIDATE_EMAIL)){
+    $response['status'] = 400;
+    $response['message'] = 'Email is not valid.';
+    return $response;
+    exit();
+  }
+  $body = "<p><b>Email:</b> $contactEmail</p>";
+  if (true /* send email */) {
+    $response['status'] = 200;
+    $response['message'] = $body;
+  }
+  
+  return json_decode(json_encode($response));
+  exit();
+}
+
+function sendDealerForm(WP_REST_Request $request) {
+  $response = array(
+    'status' => 304,
+    'message' => 'There was an error sending the form.'
+  );
+  $parameters = $_POST;
+  if(count($_POST) <= 0) {return $response; exit();}
+  $siteName = wp_strip_all_tags(trim(get_option('blogname')));
+  $contactFname= wp_strip_all_tags(trim($parameters['contact_fname']));
+  $contactLname= wp_strip_all_tags(trim($parameters['contact_lname']));
+  $contactEmail = wp_strip_all_tags(trim($parameters['contact_email']));
+  $contactPhone= wp_strip_all_tags(trim($parameters['contact_phone']));
+  $contactAddress = wp_strip_all_tags(trim($parameters['contact_address']));
+  $contactCity= wp_strip_all_tags(trim($parameters['contact_city']));
+  $contactState= wp_strip_all_tags(trim($parameters['contact_state']));
+  $contactZip= wp_strip_all_tags(trim($parameters['contact_zip']));
+  $theFile = isset($_FILES['the_file']) ? $_FILES['the_file'] : false;
+
+  if(empty($contactFname)) {
+    $response['status'] = 400;
+    $response['message'] = 'First Name field is required.';
+    return $response;
+    exit();
+  }
+
+  if(empty($contactLname)) {
+    $response['status'] = 400;
+    $response['message'] = 'Last Name field is required.';
+    return $response;
+    exit();
+  }
+  if(empty($contactEmail)) {
+    $response['status'] = 400;
+    $response['message'] = 'Email field is required.';
+    return $response;
+    exit();
+  }
+
+  if(empty($contactPhone)) {
+    $response['status'] = 400;
+    $response['message'] = 'Phone field is required.';
+    return $response;
+    exit();
+  }
+  if(empty($contactAddress)) {
+    $response['status'] = 400;
+    $response['message'] = 'Address field is required.';
+    return $response;
+    exit();
+  }
+  if(empty($contactCity)) {
+    $response['status'] = 400;
+    $response['message'] = 'City field is required.';
+    return $response;
+    exit();
+  }
+  if(empty($contactState)) {
+    $response['status'] = 400;
+    $response['message'] = 'State field is required.';
+    return $response;
+    exit();
+  }
+  if(empty($contactZip)) {
+    $response['status'] = 400;
+    $response['message'] = 'Zip field is required.';
+    return $response;
+    exit();
+  }
+  if(!$theFile) {
+    return $response;
+    exit();
+  }
+
+  if(!preg_match('/^[a-zA-Z]+$/', $contactFname)) {
+    $response['status'] = 400;
+    $response['message'] = 'Only a-z characters are allowed for names.';
+    return $response;
+    exit();
+  }
+  if(!preg_match('/^[a-zA-Z]+$/', $contactLname)) {
+    $response['status'] = 400;
+    $response['message'] = 'Only a-z characters are allowed for names.';
+    return $response;
+    exit();
+  }
+
+
+  if(!filter_var($contactEmail, FILTER_VALIDATE_EMAIL)){
+    $response['status'] = 400;
+    $response['message'] = 'Email is not valid.';
+    return $response;
+    exit();
+  }
+
+  if(!preg_match('/^[0-9]*$/', $contactPhone)) {
+    $response['status'] = 400;
+    $response['message'] = 'Phone is not valid.';
+    return $response;
+    exit();
+  }
+
+  if(!preg_match('/^\d{5}(?:[-]\d{4})?$/', $contactZip)) {
+    $response['status'] = 400;
+    $response['message'] = 'Zip is not valid';
+    return $response;
+    exit();
+  }
+
+  $saved = file_put_contents(plugin_dir_path( __FILE__ ) . 'temp/myboat.pdf', file_get_contents($theFile['tmp_name']));
+
+  if(!$saved) {
+    return $response;
+    exit();
+  }
+  $subject = "(New message sent from site $siteName) <$contactEmail>";
+  $body = "<p><b>Email:</b> $contactEmail</p>";
+  if (true /* send email */) {
+    $response['status'] = 200;
+    $response['message'] = $body;
+  }
+  return $response;
+  exit();
+}
+
+add_action('rest_api_init', function () {
+  $version = 'v1';
+  $base = 'boat-builder';
+  register_rest_route( $base .'/' . $version, '/email', array(
+    'methods' => 'POST',
+    'callback' => 'sendEmailForm'
+  ));
+  register_rest_route( $base .'/' . $version, '/dealer', array(
+    'methods' => 'POST',
+    'callback' => 'sendDealerForm'
+  ));
+});
