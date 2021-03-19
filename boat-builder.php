@@ -127,7 +127,7 @@ function boatbuilder_front_scripts()
     $assetsArr = json_decode($response['body']);
     $cssFile = $assetsArr->{'main.css'};
     $jsFile = $assetsArr->{'main.js'};
-    $pdfFile = $assetsArr->{'pdf.js'};
+    $pdfFile = $assetsArr->{'pdf-btns.js'};
     wp_enqueue_style('front-boat-parts-style', plugins_url('front/' . $cssFile, __FILE__), array(), 0.1);
     wp_enqueue_script('front-boat-parts-script', plugins_url('front/' . $jsFile, __FILE__), array('jquery-ui-core'), 0.1, true);
     wp_enqueue_script('front-boat-parts-pdf', plugins_url('front/' . $pdfFile, __FILE__), array('jquery-ui-core'), 0.1, true);
@@ -150,18 +150,15 @@ function boatbuilder_load_template( $template ) {
 
 add_filter( 'single_template', 'boatbuilder_load_template' );
 
-function send_email($form_email, $form_name, $form_body, $file_path) {
-  $email_subject = 'Message from '. get_bloginfo('name') . ' - ' . $form_email;
-  $headers = "From: '" . $form_name . "' <" . $form_email . "> \r\n";
-  $headers .= "Reply-To: ". strip_tags($form_email) . "\r\n";
+function send_email($to_email, $from_email, $reply_to, $subject, $body, $file_path) {
+  $siteName = wp_strip_all_tags(trim(get_option('blogname')));
+  $headers = "From: '" . $siteName. "' <" . $from_email . "> \r\n";
+  $headers .= "Reply-To: ". strip_tags($reply_to) . "\r\n";
   $headers .= "Content-Type:text/html;charset=utf-8";
-  $email_message = '<html><body>';
-  $email_message .= "<table>";
-  $email_message .= "<tr><td>NAME: </td><td>" . $form_name . "</td></tr>";
-  $email_message .= "<tr><td>MESSAGE: </td><td>" . $form_message . "</td></tr>";
-  $email_message .= "</table>";
-  $email_message .= "</body></html>";
-  wp_mail('no-reply@localhost.com', $email_subject, $email_message, $headers, $file_path);
+  $message = '<html><body>';
+  $message .= $body;
+  $message.= "</body></html>";
+  return wp_mail( $to_email, $subject, $message, $headers, $file_path );
 }
 
 
@@ -170,9 +167,11 @@ function sendEmailForm(WP_REST_Request $request) {
     'status' => 304,
     'message' => 'There was an error sending the form.'
   );
-  $parameters = $request->get_json_params();
+  $parameters = $_POST;
+  if(count($_POST) <= 0) {return $response; exit();}
   $siteName = wp_strip_all_tags(trim(get_option('blogname')));
   $contactEmail = wp_strip_all_tags(trim($parameters['contact_email']));
+  $theFile = isset($_FILES['the_file']) ? $_FILES['the_file'] : false;
 
   if(empty($contactEmail)) {
     $response['status'] = 400;
@@ -187,13 +186,28 @@ function sendEmailForm(WP_REST_Request $request) {
     return $response;
     exit();
   }
-  $body = "<p><b>Email:</b> $contactEmail</p>";
-  if (true /* send email */) {
+  if ( ! function_exists( 'wp_handle_upload' ) ) {
+    require_once( ABSPATH . 'wp-admin/includes/file.php' );
+}
+  $saved = wp_handle_upload($theFile, array('test_form' => false, 'mimes' => array("pdf" => "application/pdf")));
+
+  if(isset( $saved['error']) ){
+    return $response;
+    exit();
+  }
+  $body_admin = "<p><b>Email:</b>" . $contactEmail . "</p>";
+  $body_user = "<h1>Congratulations!</h1><p>We hope you like your custom build. Feel free to contact us at <a href='mailto:info@avid-boats.com'>info@avid-boats.com</a></p>";
+
+  $userSend = send_email($contactEmail, "no-reply@avid-boats.com", "info@avid-boats.com", "Avid Boats: Your Custom Build.", $body_user, $saved['file']);
+  $adminSend = send_email("leantwig@gmail.com", "no-reply@avid-boats.com", $contactEmail, "New Boat Build: Email Form", $body_admin, $saved['file']);
+  
+  $deleted = unlink($saved['file']);
+  if ($userSend && $adminSend && $deleted) {
     $response['status'] = 200;
-    $response['message'] = $body;
+    $response['message'] = "Form submission was successful!";
   }
   
-  return json_decode(json_encode($response));
+  return $response;
   exit();
 }
 
@@ -305,18 +319,31 @@ function sendDealerForm(WP_REST_Request $request) {
     exit();
   }
 
-  $saved = file_put_contents(plugin_dir_path( __FILE__ ) . 'temp/myboat.pdf', file_get_contents($theFile['tmp_name']));
+  if ( ! function_exists( 'wp_handle_upload' ) ) {
+    require_once( ABSPATH . 'wp-admin/includes/file.php' );
+}
+  $saved = wp_handle_upload($theFile, array('test_form' => false, 'mimes' => array("pdf" => "application/pdf")));
 
-  if(!$saved) {
+  if(isset( $saved['error']) ){
     return $response;
     exit();
   }
-  $subject = "(New message sent from site $siteName) <$contactEmail>";
-  $body = "<p><b>Email:</b> $contactEmail</p>";
-  if (true /* send email */) {
+
+  $body_admin = "<p><b>Name: </b>" . $contactFname . " " . $contactLname ."</p>";
+  $body_admin .= "<p><b>Email:</b>" . $contactEmail . "</p>";
+  $body_admin .= "<p><b>Phone:</b>" . $contactPhone . "</p>";
+  $body_admin .= "<p><b>Address:</b>" . $contactAddress . ", " . $contactCity . ", " . $contactState . " " . $contactZip . "</p>";
+  $body_user = "<h1>Congratulations!</h1><p>We hope you like your custom build. Feel free to contact us at <a href='mailto:info@avid-boats.com'>info@avid-boats.com</a></p>";
+
+  $userSend = send_email($contactEmail, "no-reply@avid-boats.com", "info@avid-boats.com", "Avid Boats: Your Custom Build.", $body_user, $saved['file']);
+  $adminSend = send_email("leantwig@gmail.com", "no-reply@avid-boats.com", $contactEmail, "New Boat Build: Dealer Form", $body_admin, $saved['file']);
+
+  $deleted = unlink($saved['file']);
+  if ($userSend && $adminSend && $deleted) {
     $response['status'] = 200;
-    $response['message'] = $body;
+    $response['message'] = "Form submission was successful!";
   }
+  
   return $response;
   exit();
 }
