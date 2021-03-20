@@ -9,6 +9,8 @@ Author URI:  https://avid-baots.com
 Text Domain: boat-builder
 */
 
+define('BOATBUILDER_CURRENT_VERSION',  '1.0');
+
 function boatBuilder_post_type()
 {
   register_post_type(
@@ -115,9 +117,11 @@ function boatbuilder_front_scripts()
         $rawJavascriptData = json_decode($metaData);
         $rawJavascriptData->post = $post;
         $rawJavascriptData->image = $image;
+        $rawJavascriptData->app_version = BOATBUILDER_CURRENT_VERSION;
       } else {
         $rawJavascriptData->post = $post;
         $rawJavascriptData->image = $image;
+        $rawJavascriptData->app_version = BOATBUILDER_CURRENT_VERSION;
       }
     } else {
       $rawJavascriptData = [];
