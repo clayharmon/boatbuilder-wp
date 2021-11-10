@@ -5,9 +5,17 @@ Plugin URI:  https://avid-boats.com
 Description: A way for customers to customize their boats and get pricing. 
 Version:     1.0
 Author:      Wesley Harmon
-Author URI:  https://avid-baots.com
+Author URI:  https://avid-boats.com
 Text Domain: boat-builder
 */
+
+require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
+$boat_builder_update_checker = Puc_v4_Factory::buildUpdateChecker(
+	'https://github.com/clayharmon/boatbuilder-wp/',
+	__FILE__,
+	'boat-builder'
+);
+$boat_builder_update_checker->getVcsApi()->enableReleaseAssets();
 
 define('BOATBUILDER_CURRENT_VERSION',  '1.0');
 
