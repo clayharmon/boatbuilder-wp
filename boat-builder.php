@@ -3,7 +3,7 @@
 Plugin Name: Boat Builder
 Plugin URI:  https://avid-boats.com
 Description: A way for customers to customize their boats and get pricing. 
-Version:     0.0.5
+Version:     1.0.0
 Author:      Wesley Harmon
 Author URI:  https://avid-boats.com
 Text Domain: boat-builder
