@@ -182,6 +182,7 @@ function sendEmailForm(WP_REST_Request $request) {
   $parameters = $_POST;
   if(count($_POST) <= 0) {return $response; exit();}
   $siteName = wp_strip_all_tags(trim(get_option('blogname')));
+  $boatbuilder_options = get_option('boatbuilder_store');
   $contactEmail = wp_strip_all_tags(trim($parameters['contact_email']));
   $theFile = isset($_FILES['the_file']) ? $_FILES['the_file'] : false;
 
@@ -200,7 +201,7 @@ function sendEmailForm(WP_REST_Request $request) {
   }
   if ( ! function_exists( 'wp_handle_upload' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/file.php' );
-}
+  }
   $saved = wp_handle_upload($theFile, array('test_form' => false, 'mimes' => array("pdf" => "application/pdf")));
 
   if(isset( $saved['error']) ){
@@ -211,7 +212,7 @@ function sendEmailForm(WP_REST_Request $request) {
   $body_user = "<h1>Congratulations!</h1><p>We hope you like your custom build. Feel free to contact us at <a href='mailto:info@avid-boats.com'>info@avid-boats.com</a></p>";
 
   $userSend = send_email($contactEmail, "no-reply@avid-boats.com", "info@avid-boats.com", "Avid Boats: Your Custom Build.", $body_user, $saved['file']);
-  $adminSend = send_email("leantwig@gmail.com", "no-reply@avid-boats.com", $contactEmail, "New Boat Build: Email Form", $body_admin, $saved['file']);
+  $adminSend = send_email($boatbuilder_options['sendto'], "no-reply@avid-boats.com", $contactEmail, "New Boat Build: Email Form", $body_admin, $saved['file']);
   
   $deleted = unlink($saved['file']);
   if ($userSend && $adminSend && $deleted) {
@@ -231,6 +232,7 @@ function sendDealerForm(WP_REST_Request $request) {
   $parameters = $_POST;
   if(count($_POST) <= 0) {return $response; exit();}
   $siteName = wp_strip_all_tags(trim(get_option('blogname')));
+  $boatbuilder_options = get_option('boatbuilder_store');
   $contactFname= wp_strip_all_tags(trim($parameters['contact_fname']));
   $contactLname= wp_strip_all_tags(trim($parameters['contact_lname']));
   $contactEmail = wp_strip_all_tags(trim($parameters['contact_email']));
@@ -333,7 +335,7 @@ function sendDealerForm(WP_REST_Request $request) {
 
   if ( ! function_exists( 'wp_handle_upload' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/file.php' );
-}
+  }
   $saved = wp_handle_upload($theFile, array('test_form' => false, 'mimes' => array("pdf" => "application/pdf")));
 
   if(isset( $saved['error']) ){
@@ -348,7 +350,7 @@ function sendDealerForm(WP_REST_Request $request) {
   $body_user = "<h1>Congratulations!</h1><p>We hope you like your custom build. Feel free to contact us at <a href='mailto:info@avid-boats.com'>info@avid-boats.com</a></p>";
 
   $userSend = send_email($contactEmail, "no-reply@avid-boats.com", "info@avid-boats.com", "Avid Boats: Your Custom Build.", $body_user, $saved['file']);
-  $adminSend = send_email("leantwig@gmail.com", "no-reply@avid-boats.com", $contactEmail, "New Boat Build: Dealer Form", $body_admin, $saved['file']);
+  $adminSend = send_email($boatbuilder_options['sendto'], "no-reply@avid-boats.com", $contactEmail, "New Boat Build: Dealer Form", $body_admin, $saved['file']);
 
   $deleted = unlink($saved['file']);
   if ($userSend && $adminSend && $deleted) {
@@ -372,3 +374,69 @@ add_action('rest_api_init', function () {
     'callback' => 'sendDealerForm'
   ));
 });
+
+function boatBuilder_admin_nonce_notice() {
+  if(isset($_GET['nonce_verify']) && $_GET['nonce_verify'] === 'false'){
+    echo '<div class="error notice"><p>Sorry, your nonce did not verify. Please try again.</p></div>';
+  }
+}
+add_action( 'admin_notices', 'boatBuilder_admin_nonce_notice' );
+
+add_action( 'admin_action_boatbuilder_admin_form', 'boatBuilder_admin_form_action' );
+function boatBuilder_admin_form_action(){
+  if ( !isset( $_POST['boatbuilder_admin_verify'] ) || !wp_verify_nonce( $_POST['boatbuilder_admin_verify'], 'boatbuilder_admin_update_settings' ) ) {
+    wp_redirect( $_SERVER['HTTP_REFERER'] . '&nonce_verify=false');
+    exit();
+  }
+  $boatbuilder_options = [];
+
+  if( isset( $_POST['boatbuilder_sendto'] ) ){
+    $value = esc_sql( $_POST['boatbuilder_sendto'] );
+    $boatbuilder_options['sendto'] = $value;
+  }
+
+  update_option('boatbuilder_store', $boatbuilder_options);
+  wp_redirect( $_SERVER['HTTP_REFERER'] . '&nonce_verify=true' );
+  exit();
+}
+
+
+function boatBuilder_add_settings_page(){
+  add_options_page(
+    'Boat Builder',
+    'Boat Builder',
+    'manage_options',
+    'boat-builder',
+    'boatBuilder_settings_html'
+  );
+}
+add_action( 'admin_menu', 'boatBuilder_add_settings_page' );
+function boatBuilder_settings_html(){
+  $boatbuilder_options = get_option('boatbuilder_store');
+
+  $sendto_value = (isset($boatbuilder_options['sendto']) && $boatbuilder_options['sendto']) ? $boatbuilder_options['sendto'] : "";
+  ?>
+  <div class="wrap">
+    <h1>Boat Builder Settings</h1>
+    <form style="padding:10px 0;" method="POST" action="<?php echo admin_url( 'admin.php' ); ?>">
+
+
+    <table class="form-table" role="presentation">
+      <tbody>
+        <tr>
+          <th scope="row"><label for="sendto">From Admin Email(s):</label></th>
+          <td>
+            <input name="boatbuilder_sendto" type="email" multiple id="boatbuilder_sendto" value="<?php echo $sendto_value ?>" class="regular-text">
+            <p class="description" id="boatbuilder-sendto-description">Enter a single or comma seperated list of emails for when a customer "sends to dealer" or sends to their email.</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+      <?php wp_nonce_field( 'boatbuilder_admin_update_settings', 'boatbuilder_admin_verify' ); ?>
+      
+      <input type="hidden" name="action" value="boatbuilder_admin_form" />
+      <input style="margin:10px 0;" type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" />
+    </form>
+  </div>
+  <?php
+}
