@@ -47,6 +47,12 @@ function boatBuilder_parts_box()
       'boatBuilder_parts_box_html',
       'boat-builder'
     );
+    add_meta_box(
+      'boatBuilder_disclaimers_box',
+      'Disclaimers',
+      'boatBuilder_disclaimers_box_html',
+      'boat-builder'
+    );
   }
 }
 add_action('add_meta_boxes', 'boatBuilder_parts_box');
@@ -56,6 +62,18 @@ function boatBuilder_parts_box_html()
 ?>
   <div id="boat-parts-box"></div>
 <?php
+}
+
+function boatBuilder_disclaimers_box_html( $post ){
+  $summary_photo_disclaimer = get_post_meta( $post->ID, 'boatbuilder_summary_photo_disclaimer', true );
+  $summary_photo_disclaimer_value = $summary_photo_disclaimer ? $summary_photo_disclaimer : "";
+  ?>
+  <div>
+    <label for="boatbuilder-summary-photo-disclaimer">Summary Photo Disclaimer</label>
+    <input type="text" size="32" name="boatbuilder-summary-photo-disclaimer" id="boatbuilder-summary-photo-disclaimer" value="<?php echo $summary_photo_disclaimer_value ?>"/>
+  </div>
+
+  <?php
 }
 
 function boatBuilder_cpt_enqueue($hook_suffix)
@@ -98,7 +116,13 @@ function boatBuilder_save_postdata($post_id)
       'boatbuilder_parts',
       $_POST['boatbuilder-admin-app-data']
     );
-    //delete_post_meta($post_id, 'boatbuilder_parts');
+  }
+  if (array_key_exists('boatbuilder-summary-photo-disclaimer', $_POST)) {
+    update_post_meta(
+      $post_id,
+      'boatbuilder_summary_photo_disclaimer',
+      $_POST['boatbuilder-summary-photo-disclaimer']
+    );
   }
 }
 add_action('save_post', 'boatBuilder_save_postdata');
@@ -121,6 +145,8 @@ function boatbuilder_front_scripts()
     $image = get_the_post_thumbnail_url( $id, 'full' );
     if ($id) {
       $metaData = get_post_meta($id, 'boatbuilder_parts', true);
+      $summary_photo_disclaimer = get_post_meta($id, 'boatbuilder_summary_photo_disclaimer', true);
+      $post->disclaimers = ['summary_photo_disclaimer' => $summary_photo_disclaimer];
       if ($metaData) {
         $rawJavascriptData = json_decode($metaData);
         $rawJavascriptData->post = $post;
