@@ -17,7 +17,7 @@ $boat_builder_update_checker = Puc_v4_Factory::buildUpdateChecker(
 );
 $boat_builder_update_checker->getVcsApi()->enableReleaseAssets();
 
-define('BOATBUILDER_CURRENT_VERSION',  '1.0');
+define('BOATBUILDER_CURRENT_VERSION',  '1.1.0');
 
 function boatBuilder_post_type()
 {
