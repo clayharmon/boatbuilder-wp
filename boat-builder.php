@@ -3,7 +3,7 @@
 Plugin Name: Boat Builder
 Plugin URI:  https://avid-boats.com
 Description: A way for customers to customize their boats and get pricing. 
-Version:     1.1.0
+Version:     1.2.0
 Author:      Wesley Harmon
 Author URI:  https://avid-boats.com
 Text Domain: boat-builder
@@ -17,7 +17,7 @@ $boat_builder_update_checker = Puc_v4_Factory::buildUpdateChecker(
 );
 $boat_builder_update_checker->getVcsApi()->enableReleaseAssets();
 
-define('BOATBUILDER_CURRENT_VERSION',  '1.1.0');
+define('BOATBUILDER_CURRENT_VERSION',  '1.2.0');
 
 function boatBuilder_post_type()
 {
@@ -67,12 +67,20 @@ function boatBuilder_parts_box_html()
 function boatBuilder_disclaimers_box_html( $post ){
   $summary_photo_disclaimer = get_post_meta( $post->ID, 'boatbuilder_summary_photo_disclaimer', true );
   $summary_photo_disclaimer_value = $summary_photo_disclaimer ? $summary_photo_disclaimer : "";
+
+  $footer_disclaimer = get_post_meta( $post->ID, 'boatbuilder_footer_disclaimer', true );
+  $footer_disclaimer_value = $footer_disclaimer ? $footer_disclaimer : "";
+
   ?>
-  <div>
+  <div style="padding-bottom: 20px;">
     <label for="boatbuilder-summary-photo-disclaimer">Summary Photo Disclaimer</label>
     <input type="text" size="32" name="boatbuilder-summary-photo-disclaimer" id="boatbuilder-summary-photo-disclaimer" value="<?php echo $summary_photo_disclaimer_value ?>"/>
   </div>
 
+  <div>
+    <label for="boatbuilder-footer-disclaimer">Footer Disclaimer</label>
+    <input type="text" size="32" name="boatbuilder-footer-disclaimer" id="boatbuilder-footer-disclaimer" value="<?php echo $footer_disclaimer_value?>"/>
+  </div>
   <?php
 }
 
@@ -124,6 +132,13 @@ function boatBuilder_save_postdata($post_id)
       $_POST['boatbuilder-summary-photo-disclaimer']
     );
   }
+  if (array_key_exists('boatbuilder-footer-disclaimer', $_POST)) {
+    update_post_meta(
+      $post_id,
+      'boatbuilder_footer_disclaimer',
+      $_POST['boatbuilder-footer-disclaimer']
+    );
+  }
 }
 add_action('save_post', 'boatBuilder_save_postdata');
 
@@ -146,7 +161,11 @@ function boatbuilder_front_scripts()
     if ($id) {
       $metaData = get_post_meta($id, 'boatbuilder_parts', true);
       $summary_photo_disclaimer = get_post_meta($id, 'boatbuilder_summary_photo_disclaimer', true);
-      $post->disclaimers = ['summary_photo_disclaimer' => $summary_photo_disclaimer];
+      $footer_disclaimer = get_post_meta($id, 'boatbuilder_footer_disclaimer', true);
+      $post->disclaimers = [
+        'summary_photo_disclaimer' => $summary_photo_disclaimer,
+        'footer_disclaimer' => $footer_disclaimer
+      ];
       if ($metaData) {
         $rawJavascriptData = json_decode($metaData);
         $rawJavascriptData->post = $post;
