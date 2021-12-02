@@ -163,7 +163,7 @@ function boatbuilder_front_scripts()
       $summary_photo_disclaimer = get_post_meta($id, 'boatbuilder_summary_photo_disclaimer', true);
       $footer_disclaimer = get_post_meta($id, 'boatbuilder_footer_disclaimer', true);
       $post->disclaimers = [
-        'summary_photo_disclaimer' => $summary_photo_disclaimer
+        'summary_photo_disclaimer' => $summary_photo_disclaimer,
         'footer_disclaimer' => $footer_disclaimer
       ];
       if ($metaData) {
