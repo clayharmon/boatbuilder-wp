@@ -72,7 +72,7 @@ function boatBuilder_disclaimers_box_html( $post ){
   $footer_disclaimer_value = $footer_disclaimer ? $footer_disclaimer : "";
 
   ?>
-  <div>
+  <div style="padding-bottom: 20px;">
     <label for="boatbuilder-summary-photo-disclaimer">Summary Photo Disclaimer</label>
     <input type="text" size="32" name="boatbuilder-summary-photo-disclaimer" id="boatbuilder-summary-photo-disclaimer" value="<?php echo $summary_photo_disclaimer_value ?>"/>
   </div>
