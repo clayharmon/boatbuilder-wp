@@ -157,7 +157,7 @@ function boatbuilder_front_scripts()
   global $post;
   if ($post->post_type === 'boat-builder') {
     $id = $post->ID;
-    $image = get_the_post_thumbnail_url( $id, 'full' );
+    $image = get_the_post_thumbnail_url( $id, 'large' );
     if ($id) {
       $metaData = get_post_meta($id, 'boatbuilder_parts', true);
       $summary_photo_disclaimer = get_post_meta($id, 'boatbuilder_summary_photo_disclaimer', true);
