@@ -3,7 +3,7 @@
 Plugin Name: Boat Builder
 Plugin URI:  https://avid-boats.com
 Description: A way for customers to customize their boats and get pricing. 
-Version:     1.2.1
+Version:     1.3.0
 Author:      Wesley Harmon
 Author URI:  https://avid-boats.com
 Text Domain: boat-builder
@@ -17,7 +17,7 @@ $boat_builder_update_checker = Puc_v4_Factory::buildUpdateChecker(
 );
 $boat_builder_update_checker->getVcsApi()->enableReleaseAssets();
 
-define('BOATBUILDER_CURRENT_VERSION',  '1.2.1');
+define('BOATBUILDER_CURRENT_VERSION',  '1.3.0');
 
 function boatBuilder_post_type()
 {
@@ -152,6 +152,17 @@ function boatbuilder_post_content($content)
 }
 add_filter('the_content', 'boatbuilder_post_content');
 
+function boatbuilder_remove_prices_from_parts($metadata) {
+  $metadata_object = json_decode($metadata);
+  $parts = $metadata_object->entities->parts;
+  foreach($parts->allIds as $partId){
+    $part = $parts->byId->$partId;
+    $part->price = null;
+    $part->discount = null;
+  }
+  return $metadata_object;
+}
+
 function boatbuilder_front_scripts()
 {
   global $post;
@@ -167,7 +178,8 @@ function boatbuilder_front_scripts()
         'footer_disclaimer' => $footer_disclaimer
       ];
       if ($metaData) {
-        $rawJavascriptData = json_decode($metaData);
+        $metadata_object = boatbuilder_remove_prices_from_parts($metaData);
+        $rawJavascriptData = $metadata_object;
         $rawJavascriptData->post = $post;
         $rawJavascriptData->image = $image;
         $rawJavascriptData->app_version = BOATBUILDER_CURRENT_VERSION;
