@@ -152,6 +152,17 @@ function boatbuilder_post_content($content)
 }
 add_filter('the_content', 'boatbuilder_post_content');
 
+function boatbuilder_remove_prices_from_parts($metadata) {
+  $metadata_object = json_decode($metadata);
+  $parts = $metadata_object->entities->parts;
+  foreach($parts->allIds as $partId){
+    $part = $parts->byId->$partId;
+    $part->price = null;
+    $part->discount = null;
+  }
+  return $metadata_object;
+}
+
 function boatbuilder_front_scripts()
 {
   global $post;
@@ -167,7 +178,8 @@ function boatbuilder_front_scripts()
         'footer_disclaimer' => $footer_disclaimer
       ];
       if ($metaData) {
-        $rawJavascriptData = json_decode($metaData);
+        $metadata_object = boatbuilder_remove_prices_from_parts($metaData);
+        $rawJavascriptData = $metadata_object;
         $rawJavascriptData->post = $post;
         $rawJavascriptData->image = $image;
         $rawJavascriptData->app_version = BOATBUILDER_CURRENT_VERSION;
