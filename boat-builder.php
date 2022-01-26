@@ -3,7 +3,7 @@
 Plugin Name: Boat Builder
 Plugin URI:  https://avid-boats.com
 Description: A way for customers to customize their boats and get pricing. 
-Version:     1.2.1
+Version:     1.3.0
 Author:      Wesley Harmon
 Author URI:  https://avid-boats.com
 Text Domain: boat-builder
@@ -17,7 +17,7 @@ $boat_builder_update_checker = Puc_v4_Factory::buildUpdateChecker(
 );
 $boat_builder_update_checker->getVcsApi()->enableReleaseAssets();
 
-define('BOATBUILDER_CURRENT_VERSION',  '1.2.1');
+define('BOATBUILDER_CURRENT_VERSION',  '1.3.0');
 
 function boatBuilder_post_type()
 {
