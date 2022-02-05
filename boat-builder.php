@@ -30,13 +30,25 @@ function boatBuilder_post_type()
       ],
       'public'      => true,
       'has_archive' => true,
+      'show_in_rest' => true,
       'supports' => array('title', 'thumbnail')
     ]
   );
 }
 
 add_action('init', 'boatBuilder_post_type');
+function filter_boat_builder_json( $data, $post, $context )
+{
+  $parts = get_post_meta($post->ID, 'boatbuilder_parts', true);
 
+  if( $parts ) {
+    $data->data['parts'] = $parts;
+  }
+  
+  return $data;
+}
+  
+add_filter( 'rest_prepare_boat-builder', 'filter_boat_builder_json', 10, 3 );
 function boatBuilder_parts_box()
 {
   global $pagenow;
