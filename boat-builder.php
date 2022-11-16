@@ -191,7 +191,8 @@ function boatbuilder_front_scripts()
       ];
       if ($metaData) {
         $metadata_object = boatbuilder_remove_prices_from_parts($metaData);
-        $rawJavascriptData = $metadata_object;
+        $rawJavascriptData = json_decode($metaData);
+        // $rawJavascriptData = $metadata_object;
         $rawJavascriptData->post = $post;
         $rawJavascriptData->image = $image;
         $rawJavascriptData->app_version = BOATBUILDER_CURRENT_VERSION;
